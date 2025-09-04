@@ -1,0 +1,9 @@
+apiVersion: v2
+name: common
+description: Common library chart with reusable Kubernetes templates
+type: library
+version: 0.2.0
+appVersion: "1.0.0"
+maintainers:
+  - name: Platform Team
+    email: platform@company.com

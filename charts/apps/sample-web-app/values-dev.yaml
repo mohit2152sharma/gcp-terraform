@@ -1,0 +1,37 @@
+# Development environment overrides
+global:
+  env: development
+  registry: "dev-registry.example.com"
+  
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "200m"
+    memory: "256Mi"
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+
+ingress:
+  hosts:
+    - host: sample-app-dev.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  NODE_ENV: development
+  API_URL: "https://api-dev.example.com"
+  LOG_LEVEL: "debug"
+
+configMap:
+  data:
+    database.host: "db-dev.example.com"
+    database.port: "5432"
+    redis.host: "redis-dev.example.com"
+    redis.port: "6379"
+    debug.enabled: "true"

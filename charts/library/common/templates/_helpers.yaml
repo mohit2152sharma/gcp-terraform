@@ -1,0 +1,104 @@
+{{/*
+Common template helpers
+These helpers provide standardized naming, labels, and other utilities
+*/}}
+
+{{/*
+Expand the name of the chart.
+*/}}
+{{- define "common.name" -}}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create a default fully qualified app name.
+*/}}
+{{- define "common.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create chart name and version as used by the chart label.
+*/}}
+{{- define "common.chart" -}}
+{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Common labels
+*/}}
+{{- define "common.labels" -}}
+helm.sh/chart: {{ include "common.chart" . }}
+{{ include "common.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: {{ .Values.app.name | default .Chart.Name }}
+{{- with .Values.commonLabels }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "common.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "common.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "common.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "common.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create namespace name
+*/}}
+{{- define "common.namespace" -}}
+{{- default .Release.Namespace .Values.namespaceOverride }}
+{{- end }}
+
+{{/*
+Create container image reference
+*/}}
+{{- define "common.image" -}}
+{{- if .Values.image.registry }}
+{{- printf "%s/%s:%s" .Values.image.registry .Values.image.repository (.Values.image.tag | default .Chart.AppVersion | default .Values.global.imageTag) }}
+{{- else if .Values.global.registry }}
+{{- printf "%s/%s:%s" .Values.global.registry .Values.image.repository (.Values.image.tag | default .Chart.AppVersion | default .Values.global.imageTag) }}
+{{- else }}
+{{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion | default .Values.global.imageTag) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Generate environment-specific annotations
+*/}}
+{{- define "common.annotations" -}}
+{{- if .Values.global.env }}
+environment: {{ .Values.global.env }}
+{{- end }}
+{{- if .Values.app.version }}
+app-version: {{ .Values.app.version }}
+{{- end }}
+{{- with .Values.commonAnnotations }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}

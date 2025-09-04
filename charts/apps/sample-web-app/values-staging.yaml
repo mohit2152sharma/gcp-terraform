@@ -1,0 +1,40 @@
+# Staging environment overrides
+global:
+  env: staging
+  registry: "staging-registry.example.com"
+  
+replicaCount: 2
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 60
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+
+ingress:
+  hosts:
+    - host: sample-app-staging.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  NODE_ENV: staging
+  API_URL: "https://api-staging.example.com"
+  LOG_LEVEL: "info"
+
+configMap:
+  data:
+    database.host: "db-staging.example.com"
+    database.port: "5432"
+    redis.host: "redis-staging.example.com"
+    redis.port: "6379"
+    debug.enabled: "false"

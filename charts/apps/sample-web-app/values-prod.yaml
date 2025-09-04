@@ -1,0 +1,59 @@
+# Production environment overrides
+global:
+  env: production
+  registry: "prod-registry.example.com"
+  
+replicaCount: 3
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+
+ingress:
+  hosts:
+    - host: sample-app.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  NODE_ENV: production
+  API_URL: "https://api.example.com"
+  LOG_LEVEL: "warn"
+
+configMap:
+  data:
+    database.host: "db-prod.example.com"
+    database.port: "5432"
+    redis.host: "redis-prod.example.com"
+    redis.port: "6379"
+    debug.enabled: "false"
+
+# Production specific configurations
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: app.kubernetes.io/name
+          operator: In
+          values:
+          - sample-web-app
+      topologyKey: kubernetes.io/hostname
+
+tolerations:
+- key: "production-only"
+  operator: "Equal"
+  value: "true"
+  effect: "NoSchedule"
