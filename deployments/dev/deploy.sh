@@ -140,3 +140,5 @@ echo "  kubectl describe ingress <name> -n <namespace>    # Check ingress"
 echo "  kubectl get certificate -A             # Check SSL certificates"
 echo ""
 echo "Happy deploying! 🚀"
+
+

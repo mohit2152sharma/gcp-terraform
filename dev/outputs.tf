@@ -1,62 +1,144 @@
-output "gke_cluster_name" {
-  value       = module.gke.cluster_name
-  description = "GKE cluster name"
+# Commons Module Outputs
+output "project_id" {
+  description = "The GCP project ID"
+  value       = module.globals.project_id
 }
 
-output "gke_cluster_id" {
-  value       = module.gke.cluster_id
-  description = "GKE cluster ID"
+output "region" {
+  description = "The GCP region"
+  value       = module.globals.region
+}
+
+output "environment" {
+  description = "The current environment"
+  value       = module.globals.environment
+}
+
+# VPC Outputs
+output "vpc_network_name" {
+  description = "The name of the VPC network"
+  value       = module.vpc.vpc_network_name
+}
+
+output "vpc_network_id" {
+  description = "The ID of the VPC network"
+  value       = module.vpc.vpc_network_id
+}
+
+output "vpc_network_self_link" {
+  description = "The self-link of the VPC network"
+  value       = module.vpc.vpc_network_self_link
+}
+
+output "subnet_ids" {
+  description = "Map of subnet names to their IDs"
+  value       = module.vpc.subnet_ids
+}
+
+output "subnet_self_links" {
+  description = "Map of subnet names to their self-links"
+  value       = module.vpc.subnet_self_links
+}
+
+output "subnet_ip_cidr_ranges" {
+  description = "Map of subnet names to their CIDR ranges"
+  value       = module.vpc.subnet_ip_cidr_ranges
+}
+
+output "subnet_secondary_ranges" {
+  description = "Map of subnet names to their secondary IP ranges"
+  value       = module.vpc.subnet_secondary_ranges
+}
+
+# GCR Outputs
+output "gcr_repositories" {
+  description = "List of created GCR repositories"
+  value       = module.gcr
+}
+
+# GKE Cluster Outputs
+output "gke_cluster_name" {
+  description = "The name of the GKE cluster"
+  value       = module.gke.cluster_name
 }
 
 output "gke_cluster_endpoint" {
+  description = "The endpoint of the GKE cluster"
   value       = module.gke.cluster_endpoint
-  description = "GKE cluster endpoint"
-  sensitive   = true
-}
-
-output "gke_cluster_ca_certificate" {
-  value       = module.gke.cluster_ca_certificate
-  description = "GKE cluster CA certificate"
   sensitive   = true
 }
 
 output "gke_cluster_location" {
+  description = "The location of the GKE cluster"
   value       = module.gke.cluster_location
-  description = "GKE cluster location"
 }
 
 output "gke_cluster_zones" {
+  description = "The zones of the GKE cluster"
   value       = module.gke.cluster_zones
-  description = "List of zones in which the cluster resides"
 }
 
-output "gke_kubeconfig" {
-  value       = module.gke.kubeconfig
-  description = "Kubernetes configuration"
-  sensitive   = true
+output "gke_cluster_master_version" {
+  description = "The master Kubernetes version of the GKE cluster"
+  value       = module.gke.cluster_master_version
 }
 
-output "vpc_network_id" {
-  value       = module.vpc.vpc_network_id
-  description = "VPC network ID"
+output "gke_node_pools" {
+  description = "The node pools of the GKE cluster"
+  value       = module.gke.node_pools
 }
 
-output "subnet_ids" {
-  value       = module.vpc.subnet_ids
-  description = "Map of subnet names to their IDs"
+output "gke_workload_identity_pool" {
+  description = "The Workload Identity pool for the GKE cluster"
+  value       = module.gke.workload_identity_pool
 }
 
-output "gcr_repository_urls" {
-  value       = module.gcr.repository_urls
-  description = "Container registry repository URLs"
+# Logging and Monitoring Outputs
+output "gke_logging_components" {
+  description = "Enabled logging components for the GKE cluster"
+  value       = module.gke.logging_components
 }
 
-output "project_id" {
-  value       = module.globals.project_id
-  description = "GCP project ID"
+output "gke_monitoring_components" {
+  description = "Enabled monitoring components for the GKE cluster"
+  value       = module.gke.monitoring_components
 }
 
-output "region" {
-  value       = module.globals.region
-  description = "GCP region"
+output "gke_managed_prometheus_enabled" {
+  description = "Whether managed Prometheus is enabled"
+  value       = module.gke.managed_prometheus_enabled
+}
+
+output "gke_cluster_addons" {
+  description = "Status of all enabled cluster addons"
+  value       = module.gke.cluster_addons
+}
+
+# Service Account Outputs
+output "service_accounts" {
+  description = "Details of all created service accounts"
+  value       = module.service_accounts.service_accounts
+}
+
+output "github_actions_service_account" {
+  description = "GitHub Actions service account details"
+  value = {
+    email         = module.service_accounts.service_account_emails["github-actions"]
+    member        = module.service_accounts.service_account_members["github-actions"]
+    roles         = module.service_accounts.assigned_roles["github-actions"]
+    prefixed_name = module.service_accounts.prefixed_service_account_names["github-actions"]
+    labels        = module.service_accounts.service_account_labels["github-actions"]
+  }
+}
+
+# Kubernetes Connection Information
+output "kubernetes_config" {
+  description = "Kubernetes configuration for connecting to the cluster"
+  value = {
+    cluster_name               = module.gke.cluster_name
+    cluster_endpoint          = module.gke.cluster_endpoint
+    cluster_ca_certificate    = module.gke.cluster_ca_certificate
+    workload_identity_pool    = module.gke.workload_identity_pool
+  }
+  sensitive = true
 }

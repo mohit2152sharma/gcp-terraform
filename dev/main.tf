@@ -1,68 +1,112 @@
 # Create gcr repositories, pass the names of repo in the list
+locals {
+  env = "dev"
+}
+
+
 module "globals" {
-  source = "../modules/commons"
+  source      = "../modules/commons"
+  environment = local.env
 }
 
 module "gcr" {
   source     = "../modules/gcr"
-  repo_names = ["service-a", "service-b", "frontend-app"]
+  repo_names = ["opentelemetry", "voice-agent"]
   location   = module.globals.region
   project_id = module.globals.project_id
   labels     = module.globals.labels
+  env_prefix = local.env
 }
 
+# Service Accounts for Dev Environment
+module "service_accounts" {
+  source = "../modules/service_account"
+  
+  project_id  = module.globals.project_id
+  environment = local.env
+  
+  service_accounts = [
+    {
+      account_id   = "github-actions"
+      display_name = "GitHub Actions Service Account"
+      description  = "Service account for GitHub Actions CI/CD pipelines"
+      
+      project_roles = [
+        "roles/container.admin",           # Container/GKE management
+        "roles/artifactregistry.writer"    # Push images to Artifact Registry
+      ]
+      
+      # Service-specific labels merged with commons labels
+      labels = {
+        purpose        = "ci-cd"
+        system         = "github-actions"
+        component      = "automation"
+        access_type    = "service"
+        deployment     = "github-workflow"
+      }
+    }
+  ]
+  
+  # Pass commons module labels as global labels
+  global_labels = module.globals.labels
+}
+
+# GKE Cluster for Dev Environment
 module "gke" {
   source = "../modules/gke"
-
-  name       = "dev-gke-cluster"
-  project_id = module.globals.project_id
-  location   = module.globals.region
-
-  # Use VPC created in vpc.tf
-  network                       = module.vpc.vpc_network_id
-  subnetwork                   = "projects/${module.globals.project_id}/regions/${module.globals.region}/subnetworks/dev-subnet-2"
+  
+  # Environment and basic configuration
+  environment = local.env
+  project_id  = module.globals.project_id
+  name        = "${local.env}-gke-cluster"
+  location    = module.globals.region
+  
+  # Network configuration - using the VPC and subnet with secondary ranges
+  network    = module.vpc.vpc_network_name
+  subnetwork = module.vpc.subnet_self_links["dev-subnet-2"]
+  
+  # Node locations for multi-zone deployment
+  node_locations = ["${module.globals.region}-a", "${module.globals.region}-b"]
+  
+  # Secondary IP ranges for pods and services (defined in vpc.tf)
   secondary_range_name_pods     = "pods"
   secondary_range_name_services = "services"
-
-  # Private cluster configuration
-  enable_private_nodes     = true
-  enable_private_endpoint  = false
-  master_ipv4_cidr_block  = "172.16.0.0/28"
-
-  # Allow access from the VPC subnet
-  master_authorized_networks = [
+  
+  # Use environment-specific defaults for logging/monitoring (dev environment)
+  # This will automatically use basic logging and monitoring suitable for dev
+  
+  # Workload Identity: map different namespaces KSAs -> GSAs
+  workload_identity_mappings = [
     {
-      cidr_block   = "10.0.0.0/16"
-      display_name = "VPC CIDR"
+      namespace  = "default"
+      ksa_name   = "workload"
+      create_gsa = true
+      gsa_name   = "gke-default-workload"
+      roles      = [
+        "roles/secretmanager.secretAccessor",
+        "roles/logging.logWriter",
+        "roles/monitoring.metricWriter",
+      ]
+      create_ksa = false
+    },
+    {
+      namespace  = "observability"
+      ksa_name   = "collector"
+      create_gsa = true
+      gsa_name   = "gke-observability-collector"
+      roles      = [
+        "roles/logging.logWriter",
+        "roles/monitoring.metricWriter",
+        "roles/cloudtrace.agent",
+      ]
+      create_ksa = false
     }
   ]
 
-  # Node pool configuration
-  node_pools = [
-    {
-      name           = "default-pool"
-      machine_type   = "e2-standard-2"
-      min_node_count = 1
-      max_node_count = 3
-      disk_size_gb   = 30
-      disk_type      = "pd-standard"
-      preemptible    = false
-      oauth_scopes   = ["https://www.googleapis.com/auth/cloud-platform"]
-      
-      labels = merge(module.globals.labels, {
-        environment = "dev"
-        node-pool   = "default"
-      })
-      
-      tags = ["dev", "gke-node"]
-    }
-  ]
-
-  # Addons
-  enable_network_policy              = true
-  enable_http_load_balancing        = true
-  enable_horizontal_pod_autoscaling = true
-  enable_vertical_pod_autoscaling   = false
-
+  # Labels from commons module
   labels = module.globals.labels
+  
+  # Dependencies
+  depends_on = [module.vpc]
 }
+

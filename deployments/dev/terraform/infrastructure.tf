@@ -108,3 +108,5 @@ resource "kubernetes_namespace" "app_namespace" {
     }
   }
 }
+
+

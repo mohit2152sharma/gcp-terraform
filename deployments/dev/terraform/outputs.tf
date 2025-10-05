@@ -52,3 +52,5 @@ data "kubernetes_service" "nginx_ingress_controller" {
     helm_release.nginx_ingress
   ]
 }
+
+

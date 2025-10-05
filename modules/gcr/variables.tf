@@ -17,3 +17,8 @@ variable "location" {
   description = "Location/region for GCR (e.g. us-central1)"
   type        = string
 }
+
+variable "env_prefix" {
+  description = "Environment prefix"
+  type        = string
+}
